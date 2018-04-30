@@ -1,34 +1,238 @@
-fine.
-<h1>{{hello}}</h1>
 <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
 <script src="https://code.highcharts.com/stock/highstock.js"></script>
 <script src="https://code.highcharts.com/stock/modules/exporting.js"></script>
+<script src="https://code.highcharts.com/themes/dark-unica.js"></script>
 
-<div id="container" style="height: 400px; min-width: 310px"></div>
+<style>
+    div.grids_row {
+        overflow: auto;
+        white-space: nowrap;
+    }
+    div.grids_row > div {
+        width:300px;
+        height:200px;
+        display: inline-block;
+    }
+</style>
+
+<style type="text/css" media="screen">
+    table{
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+        border-collapse:collapse;
+        border:1px solid #FF0000;
+    }
+
+    table td{
+        border:1px solid #FF0000;
+        height:450px;
+        width:500px;
+    }
+    table td.x{
+        width:50px;
+    }
+</style>
+
+
+<div style="width: 4050px; overflow: auto">
+    <table id="option_grids" border="1">
+        <thead>
+            <tr id="option_month">
+                <th>X</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+</div>
+
 <script>
-$(function () {
-    var myChart = Highcharts.chart('container', {
-        chart: {
-            type: 'bar'
-        },
-        title: {
-            text: 'Fruit Consumption'
-        },
-        xAxis: {
-            categories: ['Apples', 'Bananas', 'Oranges']
-        },
-        yAxis: {
+var showDayline = function(option_index, option_name){
+    console.info(option_name);
+    var dayline_url = location.protocol + '//' + location.hostname +
+        (location.port ? ':'+location.port: '') + '/option/dayline/';
+    console.info(dayline_url);
+    $.get(dayline_url, {'optionindex':option_index}, function(dayline_data){
+        // split the data set into ohlc and volume
+        var ohlc = [],
+            volume = [],
+            data = dayline_data['data'],
+            dataLength = dayline_data['data'].length,
+            // set the allowed units for data grouping
+            groupingUnits = [[
+                'week',                         // unit name
+                [1]                             // allowed multiples
+            ], [
+                'month',
+                [1]
+            ]],
+            i = 0;
+
+        // ["c", "d", "h", "l", "milliseconds", "o", "trade_date", "v"]
+        for (i; i < dataLength; i += 1) {
+            ohlc.push([
+                parseInt(data[i][4]), // the date
+                parseFloat(data[i][5]), // open
+                parseFloat(data[i][2]), // high
+                parseFloat(data[i][3]), // low
+                parseFloat(data[i][0]) // close
+            ]);
+
+            volume.push([
+                parseInt(data[i][4]), // the date
+                parseInt(data[i][7]) // the volume
+            ]);
+        }
+
+        console.log(ohlc);
+        console.log(volume);
+        // create the chart
+        Highcharts.stockChart(option_index, {
+            plotOptions: {
+                candlestick: {
+                    // shared options for all candlestick series
+                    color: '#2ECC40',
+                    lineColor: '#2ECC40',
+                    upColor: '#FF4136',
+                    upLineColor: '#FF4136',
+                    lineWidth: 1
+                }
+            },
+            rangeSelector: {
+                enabled: false
+            },
+
             title: {
-                text: 'Fruit eaten'
+                text: option_name,
+                style: {
+                    fontSize: '12px'
+                }
+            },
+
+            xAxis: {
+                range: 45 * 24 * 3600 * 1000 // one and half months
+            },
+
+            yAxis: [{
+                labels: {
+                    align: 'right',
+                    x: -3
+
+                },
+                title: {
+                    text: ''
+                },
+                height: '60%',
+                lineWidth: 2,
+                resize: {
+                    enabled: true
+                }
+            }, {
+                labels: {
+                    align: 'right',
+                    x: -3
+
+                },
+                title: {
+                    text: ''
+                },
+                top: '65%',
+                height: '35%',
+                offset: 0,
+                lineWidth: 2
+            }],
+
+            tooltip: {
+                split: true
+            },
+
+            series: [{
+                type: 'candlestick',
+                name: '510050',
+                data: ohlc
+            }, {
+                type: 'column',
+                name: 'Volume',
+                data: volume,
+                yAxis: 1
+            }],
+
+            scrollbar: {
+                enabled: false
+            },
+
+            navigation: {
+                buttonOptions: {
+                    enabled: false
+                }
+            },
+
+            navigator: {
+                enabled: true
             }
-        },
-        series: [{
-            name: 'Jane',
-            data: [1, 0, 4]
-        }, {
-            name: 'John',
-            data: [5, 7, 3]
-        }]
+        });
+
+    }).fail(function( jqXHR, textStatus, errorThrown ) {
+        console.error(jqXHR);
+        console.error(textStatus);
+        console.error(errorThrown );
+    }).always(function() {
+        console.log( "get dayline finished" );
+    });
+}
+
+$(function () {
+    $.ajaxSetup({
+        timeout:180000 // in milliseconds
+    });
+    var grids_url = location.protocol + '//' + location.hostname +
+        (location.port ? ':'+location.port: '') + '/option/grids/';
+    console.info(grids_url);
+    $.get(grids_url, {}, function(grids_data){
+        index = grids_data['index'];
+        columns = grids_data['columns'];
+        console.log(columns);
+        data = grids_data['data'];
+        //header
+        for (var m in columns) {
+            var html = "<th>" + columns[m] + "</th>";
+            $("#option_month").append(html);
+        }
+        //contents
+        for (var i in index) {
+            var html = "<tr><td class='x'>" + index[i] + "</td>";
+            for(var p in data[i]){
+                var td = "<td id='" + data[i][p] + "'>"
+                    + data[i][p] + "</td>";
+                html = html + td;
+            }
+            html = html + "</tr>";
+            $("tbody").append(html);
+        }
+
+        //function sleep(ms) {
+        //  return new Promise(resolve => setTimeout(resolve, ms));
+        //}
+        //charts
+        for(var i in index){
+            for(var p in data[i]){
+                var option_name = columns[p] + parseFloat(index[i]).toPrecision(3)*1000;
+                var option_index = data[i][p];
+                if(option_index == '')
+                    continue;
+                showDayline(option_index, option_name);
+                //await sleep(1000);
+            }
+
+        }
+
+    }).fail(function( jqXHR, textStatus, errorThrown ) {
+        console.error(jqXHR);
+        console.error(textStatus);
+        console.error(errorThrown );
+    }).always(function() {
+        console.log( "get grids finished" );
     });
 });
 </script>
