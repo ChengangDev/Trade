@@ -4,7 +4,7 @@ from django.template import loader
 from django.utils import timezone
 import pandas as pd
 import logging as lg
-from zsfetch.derivativedb import optiondb
+from zsfetch.progdb import optiondb
 
 logger = lg.getLogger(__name__)
 logger.setLevel(lg.WARNING)
@@ -84,6 +84,8 @@ def get_grids_of_trading_option():
 
     logger.debug("\n{}".format(grids.tail(1)))
     return grids
+
+_ohlc_columns = ["c", "d", "h", "l", "milliseconds", "o", "trade_date", "v"]
 
 
 def get_option_history_ohlc(option_index):

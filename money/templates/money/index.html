@@ -19,8 +19,6 @@
                 border:1px solid #39CCCC;
             }
 
-
-
             table td{
                 border:1px solid #39CCCC;
                 height:450px;
@@ -33,17 +31,9 @@
     </style>
 </head>
 <body>
-<div style="width: 4050px; overflow: auto">
-    <table id="option_grids" border="1">
-        <thead>
-        <tr id="option_month">
-            <th>X</th>
-        </tr>
-        </thead>
-        <tbody>
-        </tbody>
-    </table>
-</div>
+    <div>
+
+    </div>
 </body>
 <script>
     var showDayline = function(option_index, option_name){
@@ -184,18 +174,18 @@
         $.ajaxSetup({
             timeout:180000 // in milliseconds
         });
-        var grids_url = location.protocol + '//' + location.hostname +
-            (location.port ? ':'+location.port: '') + '/option/grids/';
-        console.info(grids_url);
-        $.get(grids_url, {}, function(grids_data){
-            index = grids_data['index'];
-            columns = grids_data['columns'];
+        var share_url = location.protocol + '//' + location.hostname +
+            (location.port ? ':'+location.port: '') + '/money/share/';
+        console.info(share_url);
+        $.get(share_url, {}, function(share_data){
+            index = share_data['index'];
+            columns = share_data['columns'];
             console.log(columns);
-            data = grids_data['data'];
+            data = share_data['data'];
             //header
             for (var m in columns) {
                 var html = "<th>" + columns[m] + "</th>";
-                $("#option_month").append(html);
+                //$("#option_month").append(html);
             }
             //contents
             for (var i in index) {
@@ -206,12 +196,9 @@
                     html = html + td;
                 }
                 html = html + "</tr>";
-                $("tbody").append(html);
+                //$("tbody").append(html);
             }
 
-            //function sleep(ms) {
-            //  return new Promise(resolve => setTimeout(resolve, ms));
-            //}
             //charts
             for(var i in index){
                 for(var p in data[i]){
@@ -219,7 +206,7 @@
                     var option_index = data[i][p];
                     if(option_index == '')
                         continue;
-                    showDayline(option_index, option_name);
+                    //showDayline(option_index, option_name);
                     //await sleep(1000);
                 }
 
@@ -230,7 +217,7 @@
             console.error(textStatus);
             console.error(errorThrown );
         }).always(function() {
-            console.log( "get grids finished" );
+            console.log( "get share finished" );
         });
     });
 

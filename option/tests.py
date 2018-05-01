@@ -16,10 +16,10 @@ class OptionTest(TestCase):
         lg.info("\n{}".format(grids.head(2)))
 
     def test_view_get_option_history_ohlc(self):
-        columns = ["c", "d", "h", "l", "milliseconds", "o", "trade_date", "v"]
+
         df = views.get_option_history_ohlc('10001115')
-        self.assertEqual(len(df.columns), len(columns))
-        for i in range(len(columns)):
-            self.assertEqual(columns[i], df.columns[i])
+        self.assertEqual(len(df.columns), len(views._ohlc_columns))
+        for i in range(len(views._ohlc_columns)):
+            self.assertEqual(views._ohlc_columns[i], df.columns[i])
         lg.info("\n{}".format(df.head(2)))
 
