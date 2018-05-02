@@ -14,7 +14,8 @@ class MoneyTest(TestCase):
     def test_view_get_money_share(self):
 
         df = views._get_money_share()
-        self.assertEqual(len(df.columns), len(views._share_columns))
-        util.check_same_columns_or_raise(df.columns, views._share_columns)
         lg.info("\n{}".format(df.tail(12)))
+        self.assertEqual(len(df.columns), len(views._share_columns))
+        util.check_same_columns_or_raise(list(df.columns), views._share_columns)
+        df.to_dict(orient='split')
 

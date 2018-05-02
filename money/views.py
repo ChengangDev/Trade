@@ -27,57 +27,56 @@ def share(request):
     else:
         raise Http404
 
-_share_columns = ['SEC_NAME', 'TOT_VOL',
-                  moneydb.COL_MILLISECONDS,
-                  moneydb.COL_TRADE_DATE,
-                  moneydb.COL_MONEY_FUND_INDEX
+_share_columns = [moneydb.COL_MILLISECONDS,
+                  'popular', 'others'
                   ]
 
 
 def _get_money_share():
-    singles = [
+    popular_fund = [
         '511990',  # hbty
         '511880',  # yhrl
-        '511660',  # jxty
+        # '511660',  # jxty
     ]
 
     df = _modb.get_share([])  # get all
-    logger.debug("raw share:\n{}".format(df.head(1)))
+    logger.debug("raw share:{}\n{}".format(len(df.index), df.head(1)))
     df = df.drop(['_id', 'ETF_TYPE', 'NUM', 'SEC_CODE', 'STAT_DATE'], axis=1)
-    logger.debug("trim cols share:\n{}".format(df.head(1)))
-    df.sort_values(by=[moneydb.COL_MILLISECONDS])  # for map reduce
-    logger.debug("share:\n{}".format(df.head(1)))
+    logger.debug("trim cols share:{}\n{}".format(len(df.index), df.head(1)))
+    # df.sort_values(by=[moneydb.COL_MILLISECONDS])  # for map reduce
+    # logger.debug("share:\n{}".format(df.head(1)))
 
-    # for float value
-    def dict_update(row):
-        d = {}
-        d.update(row)
-        d['TOT_VOL'] = float(d['TOT_VOL'])
-        return d
-    dict_list = []
-    cur = -1
     others_dict = {}
+    popular_dict = {}
     for _, row in df.iterrows():
         fund_index = row[moneydb.COL_MONEY_FUND_INDEX]
-        if fund_index in singles:
-            single_dict = dict_update(row)
-            dict_list.append(single_dict)
-            continue
-
-        # map reduce to sum others
         milliseconds = row[moneydb.COL_MILLISECONDS]
-        if cur != milliseconds:  # flag has changed
-            if cur != 0:  # not the first, previous exist
-                dict_list.append(others_dict)  # append previous sum
-            others_dict = dict_update(row)  # new a dict and init with current row
-            cur = milliseconds  # keep flag same
-        else:  # same flag
-            others_dict['TOT_VOL'] += float(row['TOT_VOL'])  # sum
+        if fund_index in popular_fund:
+            if milliseconds not in popular_dict:
+                popular_dict[milliseconds] = float(row['TOT_VOL'])
+            else:
+                popular_dict[milliseconds] += float(row['TOT_VOL'])
+        else:
+            if milliseconds not in others_dict:
+                others_dict[milliseconds] = float(row['TOT_VOL'])
+            else:
+                others_dict[milliseconds] += float(row['TOT_VOL'])
+    # logger.debug("popular:\n{}".format(len(popular_dict)))
+    # logger.debug("others:\n{}".format(len(others_dict)))
 
-    if bool(others_dict):
-        dict_list.append(others_dict)  # do not forget the last one
+    agg_list = []
+    for milliseconds in popular_dict:
+        agg_dict = {moneydb.COL_MILLISECONDS: milliseconds,
+                    'popular': popular_dict[milliseconds]}
+        # logger.debug("agg_dict:{}".format(agg_dict))
+        if milliseconds in others_dict:
+            agg_dict['others'] = others_dict[milliseconds]
+        else:
+            agg_dict['others'] = 0.0
+        agg_list.append(agg_dict)
 
-    agg_df = pd.DataFrame(dict_list)
-    # logger.debug("agg share:\n{}".format(agg_df.tail(12)))
+    agg_df = pd.DataFrame(agg_list, columns=_share_columns)
+    agg_df = agg_df.sort_values(by=[moneydb.COL_MILLISECONDS])
+    agg_df = agg_df.reset_index(drop=True)
     return agg_df
 
