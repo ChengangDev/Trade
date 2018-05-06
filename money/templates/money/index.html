@@ -31,7 +31,7 @@
     </style>
 </head>
 <body>
-    <div id="container">
+    <div id="container" style="height: 1000px">
 
     </div>
 </body>
@@ -39,6 +39,7 @@
     var showShareChart = function(container_id, data){
         // split the data set into ohlc and volume
         var ohlc = [],
+        ohlc_50 = [],
         vol_popular = [],
         vol_others = [],
         dataLength = data.length,
@@ -65,12 +66,12 @@
 
             vol_popular.push([
                 parseInt(data[i][0]), // the date
-                parseInt(data[i][1]) // the volume
+                parseFloat(data[i][1]) // the volume
             ]);
 
             vol_others.push([
                 parseInt(data[i][0]), // the date
-                parseInt(data[i][2]) // the volume
+                parseFloat(data[i][2]) // the volume
             ]);
         }
 
@@ -104,7 +105,7 @@
 
             xAxis: {
                 type: 'datetime',
-                range: 45 * 24 * 3600 * 1000 // one and half months
+                range: 360 * 24 * 3600 * 1000 // one year
             },
 
             yAxis: [{
